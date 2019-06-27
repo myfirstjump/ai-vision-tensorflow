@@ -5,12 +5,15 @@ from tensorflow import keras
 
 from utils import mnist_reader
 from object_printer import ObjectPrinter
+from data_training import DataTraining
+from model_evaluation import ModelEvaluation
+from data_preprocessing import DataProcessing
 
 class MainDataLoadingAndProcessing(object):
 
     def __init__(self):
         self.prt_obj = ObjectPrinter()
-    
+        self.processing_obj = DataProcessing()
 
     def data_loading(self):
 
@@ -31,21 +34,42 @@ class MainDataLoadingAndProcessing(object):
         # fashion_mnist = keras.dataset.fashion_mnist
         # (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
+        return (x_train, y_train), (x_test, y_test)
+
+    def data_preprocessing(self, training_data, testing_data):
+        x_train, y_train = training_data
+        x_test, y_test = testing_data
+        (x_train, y_train), (x_test, y_test) = self.processing_obj.grey_scale_normalize((x_train, y_train), (x_test, y_test))
+        return (x_train, y_train), (x_test, y_test)
+
 class MainTraining(object):
     def __init__(self):
-        pass
+        self.training_obj = DataTraining()
+    
+    def model_training(self, training_data):
+        x_train, y_train = training_data
+        model = self.training_obj.model_design()
+        model = self.training_obj.model_training(model, (x_train, y_train))
+        return model
 
 class MainEvaluationAndPrediction(object):
     def __init__(self):
-        pass
-
+        self.evaluation_obj = ModelEvaluation()
+    
+    def model_evaluation(self, model, testing_data):
+        result = self.evaluation_obj.model_evaluation(model, testing_data)
+        return result
 
 def ai_vision_main(input_dir, output_dir):
     data_obj = MainDataLoadingAndProcessing()
-    # train_obj = MainTraining()
-    # evaluate_obj = MainEvaluationAndPrediction()
+    train_obj = MainTraining()
+    evaluate_obj = MainEvaluationAndPrediction()
 
-    data_obj.data_loading()
+    (x_train, y_train), (x_test, y_test) = data_obj.data_loading()
+    (x_train, y_train), (x_test, y_test) = data_obj.data_preprocessing((x_train, y_train), (x_test, y_test))
+    model = train_obj.model_training((x_train, y_train))
+    result = evaluate_obj.model_evaluation(model, (x_test, y_test))
+    print(result)
 
 if __name__ == "__main__":
     pass
