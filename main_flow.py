@@ -48,7 +48,8 @@ class MainTraining(object):
     
     def model_training(self, training_data):
         x_train, y_train = training_data
-        model = self.training_obj.model_design()
+        model = self.training_obj.model_design(model_name='CNN')
+        print(model.summary())
         model = self.training_obj.model_training(model, (x_train, y_train))
         return model
 

@@ -10,3 +10,9 @@ class ModelEvaluation(object):
         evaluate_result = model.evaluate(test_images, test_labels)
 
         return evaluate_result
+
+    def prediction_under_model(self, model, test_images):
+        
+        classification_result = model.predict(test_images)
+
+        return classification_result
