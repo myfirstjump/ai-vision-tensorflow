@@ -8,6 +8,7 @@ from object_printer import ObjectPrinter
 from data_training import DataTraining
 from model_evaluation import ModelEvaluation
 from data_preprocessing import DataProcessing
+from data_generator import DataGenerator
 
 class MainDataLoadingAndProcessing(object):
 
@@ -17,7 +18,9 @@ class MainDataLoadingAndProcessing(object):
 
     def data_loading(self):
 
-        ### import fashion_mnist data
+        ###############################
+        #  import fashion_mnist data  #
+        ###############################
         x_train, y_train = mnist_reader.load_mnist('/app/data/fashion', kind='train')
         x_test, y_test = mnist_reader.load_mnist('/app/data/fashion', kind='t10k')
 

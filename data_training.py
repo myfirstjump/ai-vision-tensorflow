@@ -18,7 +18,7 @@ class DataTraining(object):
             print('Running function:', method.__name__, ' cost time:', execution_time, 'seconds.')
             return result
         return time_record
-    
+        
     def model_design(self, model_name):
 
         if model_name == 'DNN':
