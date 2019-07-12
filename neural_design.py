@@ -49,7 +49,7 @@ class NeuralCalculation(object):
                 initializer=tf.constant_initializer(0))
 
             if spectral_normed:
-                mul = tf.matmul(input_, spectral_norm(weight))
+                mul = tf.matmul(input_, self.spectral_norm(weight))
             else:
                 mul = tf.matmul(input_, weight)
 
@@ -76,6 +76,33 @@ class NeuralCalculation(object):
             
         return conv
 
+
+    def generator(self, z, reuse=False, spectral_normed=False):
+        _batch_size = tf.shape(z)[0]
+        with tf.variable_scope('G', reuse=reuse) as vs:
+            net = self.linear(z, 7*7*128, name='fc_1', spectral_normed=spectral_normed, reuse=reuse)
+            net = tf.nn.relu(net)
+            net = tf.reshape(net, [_batch_size, 7, 7 , 128])
+            net = self.deconv2d(net, [_batch_size, 14, 14, 64, ], name='deconv_1', spectral_normed=spectral_normed, reuse=reuse)
+            net = tf.nn.relu(net)
+            net = self.deconv2d(net, [_batch_size, 28, 28, 1], name='deconv_2', spectral_normed=spectral_normed, reuse=reuse)
+            G_sample = tf.sigmoid(net)
+        G_variables = tf.contrib.framework.get_variables(vs)
+        return G_sample, G_variables
+    
+    def discriminator(self, X, spectral_normed=False, reuse=False):
+        X = tf.reshape(X, [-1, 28, 28, 1])
+        _batch_size = tf.shape(X)[0]
+        with tf.variable_scope('D', reuse=reuse) as vs:
+            net = self.conv2d(X, 128, name='conv_1', spectral_normed=spectral_normed, reuse=reuse)
+            net = tf.nn.leaky_relu(net)
+            net = self.conv2d(net, 64, name='conv_2', spectral_normed=spectral_normed, reuse=reuse)
+            net = tf.nn_leaky_relu(net)
+            net = tf.reshape(net, [-1, 7*7*64])
+            D_logits = self.linear(net, 1, name='fc_1', spectral_normed=spectral_normed, reuse=reuse)
+        D_variables = tf.contrib.framework.get_variables(vs)
+        return D_logits, D_variables
+
     def deconv2d(input_, output_shape, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="deconv2d", spectral_normed=False, reuse=False, padding="SAME"):
         # Glorot initialization
         # For RELU nonlinearity, it's sqrt(2./(n_in)) instead
@@ -100,3 +127,40 @@ class NeuralCalculation(object):
             deconv = tf.reshape(tf.nn.bias_add(deconv, biases), tf.shape(deconv))
             
         return deconv
+
+
+class LossDeisgn(object):
+
+    def __init__(self):
+        pass
+
+    def gan_loss(self, D_real_logits, D_fake_logits, gan_type='GAN', relativistic=False):
+        if relativistic:
+            real_logits = (D_real_logits - tf.reduce_mean(D_fake_logits))
+            fake_logits = (D_fake_logits - tf.reduce_mean(D_real_logits))
+            if gan_type = 'GAN':
+                D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits))
+                D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits))
+
+                G_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(real_logits), logits=real_logits))
+                G_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_logits), logits=fake_logits))
+            
+            else:
+                raise NotImplementedError
+    
+        else:
+            real_logits = D_real_logits
+            fake_logits = D_fake_logits
+            if gan_type = 'GAN':
+                D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits))
+                D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits))
+
+                G_real_loss = 0
+                G_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_logits), logits=fake_logits))
+            else:
+                raise NotImplementedError
+        
+        D_loss = D_real_loss + D_fake_loss
+        G_loss = G_real_loss + G_fake_loss
+
+        return D_loss, G_loss
