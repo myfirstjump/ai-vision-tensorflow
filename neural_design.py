@@ -85,11 +85,11 @@ class NeuralCalculation(object):
             w = tf.get_variable("w", [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
             if spectral_normed:
-            deconv = tf.nn.conv2d_transpose(input_, spectral_norm(w),
+                deconv = tf.nn.conv2d_transpose(input_, spectral_norm(w),
                                             output_shape=output_shape,
                                             strides=[1, d_h, d_w, 1], padding=padding)
             else:
-            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
+                deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
                                             strides=[1, d_h, d_w, 1], padding=padding)
 
             biases = tf.get_variable("b", [output_shape[-1]], initializer=tf.constant_initializer(0))
