@@ -63,10 +63,9 @@ class NeuralCalculation(object):
             w = tf.get_variable("w", [k_h, k_w, input_.get_shape()[-1], output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
             if spectral_normed:
-            conv = tf.nn.conv2d(input_, spectral_norm(w),
-                                strides=[1, d_h, d_w, 1], padding=padding)
+                conv = tf.nn.conv2d(input_, spectral_norm(w), strides=[1, d_h, d_w, 1], padding=padding)
             else:
-            conv = tf.nn.conv2d(input_, w, strides=[1, d_h, d_w, 1], padding=padding)
+                conv = tf.nn.conv2d(input_, w, strides=[1, d_h, d_w, 1], padding=padding)
 
             biases = tf.get_variable("b", [output_dim], initializer=tf.constant_initializer(0.0))
             conv = tf.reshape(tf.nn.bias_add(conv, biases), tf.shape(conv))
