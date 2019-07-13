@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from neural_design import NeuralCalculation, LossDeisgn
+from neural_design import NeuralCalculation, LossDesign
 
 class DataTraining(object):
     def __init__(self):
@@ -22,7 +22,7 @@ class DataTraining(object):
             return result
         return time_record
         
-    def model_design(self, model_name, hyperparameters=None):
+    def model_design(self, model_name, data, hyperparameters):
 
         if model_name == 'DNN':
             model = tf.keras.models.Sequential([
@@ -54,6 +54,9 @@ class DataTraining(object):
             n_disc = hyperparameters['n_disc']
             lr = hyperparameters['lr']
 
+            tf.set_random_seed(seed)
+            np.random.seed(seed)
+
             tf.reset_default_graph()
 
             X = tf.placeholder(tf.float32, shape=[None, X_dim])
@@ -62,7 +65,7 @@ class DataTraining(object):
 
             G_sample, G_var = self.neural_obj.generator(z)
             D_real_logits, D_var = self.neural_obj.discriminator(X, spectral_normed=False)
-            D_fake_logits, _ = self.neural_obj.discriminator(G_sample, spectral_normed=False)
+            D_fake_logits, _ = self.neural_obj.discriminator(G_sample, spectral_normed=False, reuse=True)
 
             D_loss, G_loss = self.loss_obj.gan_loss(D_real_logits, D_fake_logits, gan_type='GAN', relativistic=False)
             D_solver = (tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5)).minimize(D_loss, var_list=D_var)
@@ -80,6 +83,27 @@ class DataTraining(object):
             sess.run(tf.global_variables_initializer())
 
             model = 'GAN graph'
+
+            start_time = time.time()
+            for it in range(30000):
+                for _ in range(n_disc):
+                    X_mb, _ = data.train.next_batch(batch_size)
+
+                    _, D_loss_curr = sess.run(
+                        [D_solver, D_loss],
+                        feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
+                    )
+                    
+                X_mb, _ = data.train.next_batch(batch_size)
+                _, G_loss_curr = sess.run(
+                    [G_solver, G_loss],
+                    feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
+                )
+
+                if it % 1000 == 0:
+                    print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
+                    
+                    samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
 
 
         return model
@@ -99,9 +123,8 @@ class DataTraining(object):
         return model
 
     @sys_show_execution_time
-    def gan_model_training(self, hyperparameters=None):
+    def gan_model_training(self, data, hyperparameters=None):
 
-        seed = hyperparameters['seed']
         batch_size = hyperparameters['batch_size']
         X_dim = hyperparameters['X_dim']
         z_dim = hyperparameters['z_dim']
@@ -113,23 +136,23 @@ class DataTraining(object):
         start_time = time.time()
         for it in range(30000):
             for _ in range(n_disc):
-                X_mb, _ = mnist.train.next_batch(batch_size)
+                X_mb, _ = data.train.next_batch(batch_size)
 
                 _, D_loss_curr = sess.run(
                     [D_solver, D_loss],
-                    feed_dict={X: X_mb, z: sample_z(batch_size, z_dim)}
+                    feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
                 )
                 
-            X_mb, _ = mnist.train.next_batch(batch_size)
+            X_mb, _ = data.train.next_batch(batch_size)
             _, G_loss_curr = sess.run(
                 [G_solver, G_loss],
-                feed_dict={X: X_mb, z: sample_z(batch_size, z_dim)}
+                feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
             )
 
             if it % 1000 == 0:
                 print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
                 
-                samples = sess.run(G_sample, feed_dict={z: sample_z(16, z_dim)})
+                samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
 
 class CallBack(tf.keras.callbacks.Callback):
 

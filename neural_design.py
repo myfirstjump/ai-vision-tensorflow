@@ -8,6 +8,10 @@ class NeuralCalculation(object):
     def __init__(self):
         pass
     
+
+    def sample_z(self, m, n):
+        return np.random.uniform(-1., 1., size=[m, n])   
+     
     def spectral_norm(self, w, iteration=1):
   
         def l2_norm(v, eps=1e-12):
@@ -35,7 +39,7 @@ class NeuralCalculation(object):
             w_norm = tf.reshape(w_norm, w_shape)
         return w_norm
 
-    def linear(input_, output_size, name="linear", stddev=None, spectral_normed=False, reuse=False):
+    def linear(self, input_, output_size, name="linear", stddev=None, spectral_normed=False, reuse=False):
         shape = input_.get_shape().as_list()
 
         if stddev is None:
@@ -52,7 +56,7 @@ class NeuralCalculation(object):
 
         return mul + bias
   
-    def conv2d(input_, output_dim, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="conv2d", spectral_normed=False, reuse=False, padding="SAME"):
+    def conv2d(self, input_, output_dim, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="conv2d", spectral_normed=False, reuse=False, padding="SAME"):
 
         fan_in = k_h * k_w * input_.get_shape().as_list()[-1]
         fan_out = k_h * k_w * output_dim
@@ -63,7 +67,7 @@ class NeuralCalculation(object):
             w = tf.get_variable("w", [k_h, k_w, input_.get_shape()[-1], output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
             if spectral_normed:
-                conv = tf.nn.conv2d(input_, spectral_norm(w), strides=[1, d_h, d_w, 1], padding=padding)
+                conv = tf.nn.conv2d(input_, self.spectral_norm(w), strides=[1, d_h, d_w, 1], padding=padding)
             else:
                 conv = tf.nn.conv2d(input_, w, strides=[1, d_h, d_w, 1], padding=padding)
 
@@ -72,7 +76,7 @@ class NeuralCalculation(object):
             
         return conv
 
-    def deconv2d(input_, output_shape, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="deconv2d", spectral_normed=False, reuse=False, padding="SAME"):
+    def deconv2d(self, input_, output_shape, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="deconv2d", spectral_normed=False, reuse=False, padding="SAME"):
         # Glorot initialization
         # For RELU nonlinearity, it's sqrt(2./(n_in)) instead
         fan_in = k_h * k_w * input_.get_shape().as_list()[-1]
@@ -85,7 +89,7 @@ class NeuralCalculation(object):
             w = tf.get_variable("w", [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
             if spectral_normed:
-                deconv = tf.nn.conv2d_transpose(input_, spectral_norm(w),
+                deconv = tf.nn.conv2d_transpose(input_, self.spectral_norm(w),
                                             output_shape=output_shape,
                                             strides=[1, d_h, d_w, 1], padding=padding)
             else:
@@ -115,9 +119,9 @@ class NeuralCalculation(object):
         _batch_size = tf.shape(X)[0]
         with tf.variable_scope('D', reuse=reuse) as vs:
             net = self.conv2d(X, 128, name='conv_1', spectral_normed=spectral_normed, reuse=reuse)
-            net = tf.nn.leaky_relu(net)
+            net = tf.nn.relu(net)# net = tf.nn.leaky_relu(net)
             net = self.conv2d(net, 64, name='conv_2', spectral_normed=spectral_normed, reuse=reuse)
-            net = tf.nn_leaky_relu(net)
+            net = tf.nn.relu(net)# net = tf.nn.leaky_relu(net)
             net = tf.reshape(net, [-1, 7*7*64])
             D_logits = self.linear(net, 1, name='fc_1', spectral_normed=spectral_normed, reuse=reuse)
         D_variables = tf.contrib.framework.get_variables(vs)

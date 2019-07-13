@@ -73,8 +73,8 @@ class MainTraining(object):
         hyperparameters['n_disc'] = 1
         hyperparameters['lr'] = 1e-4
 
-        self.training_obj.model_design(model_name='GAN') # or LSGAN
-        self.training_obj.gan_model_training()
+        self.training_obj.model_design(model_name='GAN', data=data, hyperparameters=hyperparameters) # or LSGAN
+        # self.training_obj.gan_model_training(data, hyperparameters)
 
 
 
