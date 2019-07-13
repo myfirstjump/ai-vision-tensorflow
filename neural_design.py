@@ -124,7 +124,7 @@ class NeuralCalculation(object):
         return D_logits, D_variables
 
 
-class LossDeisgn(object):
+class LossDesign(object):
 
     def __init__(self):
         pass
