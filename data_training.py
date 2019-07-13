@@ -82,30 +82,16 @@ class DataTraining(object):
             sess = tf.Session()
             sess.run(tf.global_variables_initializer())
 
-            model = 'GAN graph'
-
-            start_time = time.time()
-            for it in range(30000):
-                for _ in range(n_disc):
-                    X_mb, _ = data.train.next_batch(batch_size)
-
-                    _, D_loss_curr = sess.run(
-                        [D_solver, D_loss],
-                        feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
-                    )
-                    
-                X_mb, _ = data.train.next_batch(batch_size)
-                _, G_loss_curr = sess.run(
-                    [G_solver, G_loss],
-                    feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
-                )
-
-                if it % 1000 == 0:
-                    print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
-                    
-                    samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
-
-
+            model = {}
+            model['sess'] = sess
+            model['D_solver'] = D_solver
+            model['D_loss'] = D_loss
+            model['G_solver'] = G_solver
+            model['G_loss'] = G_loss
+            model['G_sample'] = G_sample
+            model['X'] = X
+            model['z'] = z
+            
         return model
 
 
@@ -123,7 +109,7 @@ class DataTraining(object):
         return model
 
     @sys_show_execution_time
-    def gan_model_training(self, data, hyperparameters=None):
+    def gan_model_training(self, data, model, hyperparameters=None):
 
         batch_size = hyperparameters['batch_size']
         X_dim = hyperparameters['X_dim']
@@ -132,6 +118,15 @@ class DataTraining(object):
         lam = hyperparameters['lam']
         n_disc = hyperparameters['n_disc']
         lr = hyperparameters['lr']
+
+        sess = model['sess']
+        D_solver = model['D_solver']
+        D_loss = model['D_loss']
+        G_solver = model['G_solver']
+        G_loss = model['G_loss']
+        G_sample = model['G_sample']
+        X = model['X']
+        z = model['z']
 
         start_time = time.time()
         for it in range(30000):
