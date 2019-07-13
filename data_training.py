@@ -22,7 +22,7 @@ class DataTraining(object):
             return result
         return time_record
         
-    def model_design(self, model_name):
+    def model_design(self, model_name, hyperparameters=None):
 
         if model_name == 'DNN':
             model = tf.keras.models.Sequential([
@@ -43,7 +43,17 @@ class DataTraining(object):
                 tf.keras.layers.Dense(10, activation=tf.nn.softmax)
             ])
 
-        if model_name = 'GAN':
+        if model_name == 'GAN':
+            
+            seed = hyperparameters['seed']
+            batch_size = hyperparameters['batch_size']
+            X_dim = hyperparameters['X_dim']
+            z_dim = hyperparameters['z_dim']
+            h_dim = hyperparameters['h_dim']
+            lam = hyperparameters['lam']
+            n_disc = hyperparameters['n_disc']
+            lr = hyperparameters['lr']
+
             tf.reset_default_graph()
 
             X = tf.placeholder(tf.float32, shape=[None, X_dim])
@@ -69,7 +79,8 @@ class DataTraining(object):
             sess = tf.Session()
             sess.run(tf.global_variables_initializer())
 
-            
+            model = 'GAN graph'
+
 
         return model
 
@@ -86,6 +97,39 @@ class DataTraining(object):
         model.fit(training_images, training_labels, epochs=15, callbacks=[callbacks])
 
         return model
+
+    @sys_show_execution_time
+    def gan_model_training(self, hyperparameters=None):
+
+        seed = hyperparameters['seed']
+        batch_size = hyperparameters['batch_size']
+        X_dim = hyperparameters['X_dim']
+        z_dim = hyperparameters['z_dim']
+        h_dim = hyperparameters['h_dim']
+        lam = hyperparameters['lam']
+        n_disc = hyperparameters['n_disc']
+        lr = hyperparameters['lr']
+
+        start_time = time.time()
+        for it in range(30000):
+            for _ in range(n_disc):
+                X_mb, _ = mnist.train.next_batch(batch_size)
+
+                _, D_loss_curr = sess.run(
+                    [D_solver, D_loss],
+                    feed_dict={X: X_mb, z: sample_z(batch_size, z_dim)}
+                )
+                
+            X_mb, _ = mnist.train.next_batch(batch_size)
+            _, G_loss_curr = sess.run(
+                [G_solver, G_loss],
+                feed_dict={X: X_mb, z: sample_z(batch_size, z_dim)}
+            )
+
+            if it % 1000 == 0:
+                print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
+                
+                samples = sess.run(G_sample, feed_dict={z: sample_z(16, z_dim)})
 
 class CallBack(tf.keras.callbacks.Callback):
 

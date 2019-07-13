@@ -42,11 +42,8 @@ class NeuralCalculation(object):
             stddev = np.sqrt(1. / (shape[1]))
 
         with tf.variable_scope(name, reuse=reuse) as scope:
-            weight = tf.get_variable("w", [shape[1], output_size], tf.float32,
-                tf.truncated_normal_initializer(stddev=stddev))
-
-            bias = tf.get_variable("b", [output_size],
-                initializer=tf.constant_initializer(0))
+            weight = tf.get_variable("w", [shape[1], output_size], tf.float32, tf.truncated_normal_initializer(stddev=stddev))
+            bias = tf.get_variable("b", [output_size], initializer=tf.constant_initializer(0))
 
             if spectral_normed:
                 mul = tf.matmul(input_, self.spectral_norm(weight))
@@ -76,6 +73,30 @@ class NeuralCalculation(object):
             
         return conv
 
+    def deconv2d(input_, output_shape, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="deconv2d", spectral_normed=False, reuse=False, padding="SAME"):
+        # Glorot initialization
+        # For RELU nonlinearity, it's sqrt(2./(n_in)) instead
+        fan_in = k_h * k_w * input_.get_shape().as_list()[-1]
+        fan_out = k_h * k_w * output_shape[-1]
+        if stddev is None:
+            stddev = np.sqrt(2. / (fan_in))
+
+        with tf.variable_scope(name, reuse=reuse) as scope:
+            # filter : [height, width, output_channels, in_channels]
+            w = tf.get_variable("w", [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
+                                initializer=tf.truncated_normal_initializer(stddev=stddev))
+            if spectral_normed:
+            deconv = tf.nn.conv2d_transpose(input_, spectral_norm(w),
+                                            output_shape=output_shape,
+                                            strides=[1, d_h, d_w, 1], padding=padding)
+            else:
+            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
+                                            strides=[1, d_h, d_w, 1], padding=padding)
+
+            biases = tf.get_variable("b", [output_shape[-1]], initializer=tf.constant_initializer(0))
+            deconv = tf.reshape(tf.nn.bias_add(deconv, biases), tf.shape(deconv))
+            
+        return deconv
 
     def generator(self, z, reuse=False, spectral_normed=False):
         _batch_size = tf.shape(z)[0]
@@ -102,31 +123,6 @@ class NeuralCalculation(object):
             D_logits = self.linear(net, 1, name='fc_1', spectral_normed=spectral_normed, reuse=reuse)
         D_variables = tf.contrib.framework.get_variables(vs)
         return D_logits, D_variables
-
-    def deconv2d(input_, output_shape, k_h=4, k_w=4, d_h=2, d_w=2, stddev=None, name="deconv2d", spectral_normed=False, reuse=False, padding="SAME"):
-        # Glorot initialization
-        # For RELU nonlinearity, it's sqrt(2./(n_in)) instead
-        fan_in = k_h * k_w * input_.get_shape().as_list()[-1]
-        fan_out = k_h * k_w * output_shape[-1]
-        if stddev is None:
-            stddev = np.sqrt(2. / (fan_in))
-
-        with tf.variable_scope(name, reuse=reuse) as scope:
-            # filter : [height, width, output_channels, in_channels]
-            w = tf.get_variable("w", [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
-                                initializer=tf.truncated_normal_initializer(stddev=stddev))
-            if spectral_normed:
-            deconv = tf.nn.conv2d_transpose(input_, spectral_norm(w),
-                                            output_shape=output_shape,
-                                            strides=[1, d_h, d_w, 1], padding=padding)
-            else:
-            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
-                                            strides=[1, d_h, d_w, 1], padding=padding)
-
-            biases = tf.get_variable("b", [output_shape[-1]], initializer=tf.constant_initializer(0))
-            deconv = tf.reshape(tf.nn.bias_add(deconv, biases), tf.shape(deconv))
-            
-        return deconv
 
 
 class LossDeisgn(object):
