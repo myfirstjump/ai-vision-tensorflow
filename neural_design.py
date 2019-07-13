@@ -133,7 +133,7 @@ class LossDeisgn(object):
         if relativistic:
             real_logits = (D_real_logits - tf.reduce_mean(D_fake_logits))
             fake_logits = (D_fake_logits - tf.reduce_mean(D_real_logits))
-            if gan_type = 'GAN':
+            if gan_type == 'GAN':
                 D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits))
                 D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits))
 
@@ -146,7 +146,7 @@ class LossDeisgn(object):
         else:
             real_logits = D_real_logits
             fake_logits = D_fake_logits
-            if gan_type = 'GAN':
+            if gan_type == 'GAN':
                 D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits))
                 D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits))
 
