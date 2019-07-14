@@ -61,7 +61,7 @@ class MainTraining(object):
         model = self.training_obj.model_training(model, (x_train, y_train))
         return model
     
-    def tf_model_training(self, data):
+    def tf_model_training(self, data, output_dir):
 
         hyperparameters = {}
         hyperparameters['seed'] = 9487
@@ -74,7 +74,7 @@ class MainTraining(object):
         hyperparameters['lr'] = 1e-4
 
         model = self.training_obj.model_design(model_name='GAN', data=data, hyperparameters=hyperparameters) # or LSGAN
-        self.training_obj.gan_model_training(data, model, hyperparameters)
+        self.training_obj.gan_model_training(data, output_dir, model, hyperparameters)
 
 
 
@@ -103,14 +103,14 @@ def gan_training_main(input_dir, output_dir):
     evaluate_obj = MainEvaluationAndPrediction()
 
     data = data_obj.mnist_dateset_obj_loading()
-    train_obj.tf_model_training(data)
+    train_obj.tf_model_training(data, output_dir)
 
 if __name__ == "__main__":
     pass
     parser = argparse.ArgumentParser(description='AI-VISION-TF.')
 
     parser.add_argument('-i', '--input_dir', default='/app/data')
-    parser.add_argument('-o', '--output_dir', default='/app/output')
+    parser.add_argument('-o', '--output_dir', default='/app/output/gan_output/')
     
     args = parser.parse_args()
     input_dir = args.input_dir

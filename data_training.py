@@ -6,11 +6,13 @@ import tensorflow as tf
 from tensorflow import keras
 
 from neural_design import NeuralCalculation, LossDesign
+from plot_module import PlotDesign
 
 class DataTraining(object):
     def __init__(self):
         self.neural_obj = NeuralCalculation()
         self.loss_obj = LossDesign()
+        self.plot_obj = PlotDesign()
 
     def sys_show_execution_time(method):
         def time_record(*args, **kwargs):
@@ -91,7 +93,7 @@ class DataTraining(object):
             model['G_sample'] = G_sample
             model['X'] = X
             model['z'] = z
-            
+
         return model
 
 
@@ -109,7 +111,7 @@ class DataTraining(object):
         return model
 
     @sys_show_execution_time
-    def gan_model_training(self, data, model, hyperparameters=None):
+    def gan_model_training(self, data, output_dir, model, hyperparameters=None):
 
         batch_size = hyperparameters['batch_size']
         X_dim = hyperparameters['X_dim']
@@ -148,6 +150,8 @@ class DataTraining(object):
                 print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
                 
                 samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
+                fig = self.plot_obj.plot(samples)
+                self.plot_obj.plot_saving(dest_path=output_dir, filename='gan_generator_{}_{}'.format('mnist', it), suffix='png')
 
 class CallBack(tf.keras.callbacks.Callback):
 
