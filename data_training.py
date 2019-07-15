@@ -24,7 +24,7 @@ class DataTraining(object):
             return result
         return time_record
         
-    def model_design(self, model_name, data, hyperparameters):
+    def model_design(self, model_name, data, hyperparameters, graph_output_dir=None):
 
         if model_name == 'DNN':
             model = tf.keras.models.Sequential([
@@ -82,6 +82,9 @@ class DataTraining(object):
             z_r_optim = z_optimizer.minimize(z_r_loss, var_list=[z_r])
 
             sess = tf.Session()
+
+            tensorboard_output = graph_output_dir + 'gan_graphs'
+            writer = tf.summary.FileWriter(tensorboard_output, sess.graph)
             sess.run(tf.global_variables_initializer())
 
             model = {}
@@ -151,7 +154,9 @@ class DataTraining(object):
                 
                 samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
                 fig = self.plot_obj.plot(samples)
-                self.plot_obj.plot_saving(dest_path=output_dir, filename='gan_generator_{}_{}'.format('mnist', it), suffix='png')
+
+                dest_path = output_dir + 'gan_output/'
+                self.plot_obj.plot_saving(dest_path=dest_path, filename='gan_generator_{}_{}'.format('mnist', it), suffix='png')
 
 class CallBack(tf.keras.callbacks.Callback):
 

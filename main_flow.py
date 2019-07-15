@@ -73,7 +73,8 @@ class MainTraining(object):
         hyperparameters['n_disc'] = 1
         hyperparameters['lr'] = 1e-4
 
-        model = self.training_obj.model_design(model_name='GAN', data=data, hyperparameters=hyperparameters) # or LSGAN
+        graph_output_dir = output_dir + 'tensorboard/'
+        model = self.training_obj.model_design(model_name='GAN', data=data, hyperparameters=hyperparameters, graph_output_dir=graph_output_dir) # or LSGAN
         self.training_obj.gan_model_training(data, output_dir, model, hyperparameters)
 
 
@@ -109,8 +110,8 @@ if __name__ == "__main__":
     pass
     parser = argparse.ArgumentParser(description='AI-VISION-TF.')
 
-    parser.add_argument('-i', '--input_dir', default='/app/data')
-    parser.add_argument('-o', '--output_dir', default='/app/output/gan_output/')
+    parser.add_argument('-i', '--input_dir', default='/app/data/')
+    parser.add_argument('-o', '--output_dir', default='/app/output/')
     
     args = parser.parse_args()
     input_dir = args.input_dir
