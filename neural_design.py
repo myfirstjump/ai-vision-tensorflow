@@ -10,8 +10,9 @@ class NeuralCalculation(object):
     
 
     def sample_z(self, m, n):
+        # Used in GAN noise generalization.
         return np.random.uniform(-1., 1., size=[m, n])   
-     
+
     def spectral_norm(self, w, iteration=1):
   
         def l2_norm(v, eps=1e-12):
@@ -124,9 +125,9 @@ class NeuralCalculation(object):
             net = tf.nn.relu(net)# net = tf.nn.leaky_relu(net)
             net = tf.reshape(net, [-1, 7*7*64])
             D_logits = self.linear(net, 1, name='fc_1', spectral_normed=spectral_normed, reuse=reuse)
+            D_logits = tf.sigmoid(D_logits)
         D_variables = tf.contrib.framework.get_variables(vs)
         return D_logits, D_variables
-
 
 class LossDesign(object):
 
@@ -134,6 +135,7 @@ class LossDesign(object):
         pass
 
     def gan_loss(self, D_real_logits, D_fake_logits, gan_type='GAN', relativistic=False):
+
         if relativistic:
             real_logits = (D_real_logits - tf.reduce_mean(D_fake_logits))
             fake_logits = (D_fake_logits - tf.reduce_mean(D_real_logits))
@@ -148,14 +150,15 @@ class LossDesign(object):
                 raise NotImplementedError
     
         else:
+            # Original GAN Loss design
             real_logits = D_real_logits
             fake_logits = D_fake_logits
             if gan_type == 'GAN':
-                D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits))
-                D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits))
+                D_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_logits), logits=real_logits)) # Wish Discriminator give high score(close to 1) to the real data
+                D_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_logits), logits=fake_logits)) # Wish Discriminator give low score(close to 0) to the fake data
 
                 G_real_loss = 0
-                G_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_logits), logits=fake_logits))
+                G_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_logits), logits=fake_logits)) # Wish Discriminator give high score(close to 1) to the fake data
             else:
                 raise NotImplementedError
         

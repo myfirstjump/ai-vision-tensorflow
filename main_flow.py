@@ -41,8 +41,11 @@ class MainDataLoadingAndProcessing(object):
         return (x_train, y_train), (x_test, y_test)
 
     def mnist_dateset_obj_loading(self):
-        mnist = input_data.read_data_sets('/app/data/fashion')
-        return mnist
+        fashion = input_data.read_data_sets('/app/data/fashion')
+        mnist = input_data.read_data_sets('/app/data/mnist')
+        data = fashion.concatenate(mnist)
+
+        return data
 
     def data_preprocessing(self, training_data, testing_data):
         x_train, y_train = training_data
@@ -65,9 +68,9 @@ class MainTraining(object):
 
         hyperparameters = {}
         hyperparameters['seed'] = 9487
-        hyperparameters['batch_size'] = 32
+        hyperparameters['batch_size'] = 32 # (In Goodfellow et. al, the parameter m)
         hyperparameters['X_dim'] = 784
-        hyperparameters['z_dim'] = 10
+        hyperparameters['z_dim'] = 10 # Arbitrary set z with 10 dimension. (for random noise)
         hyperparameters['h_dim'] = 128
         hyperparameters['lam'] = 10
         hyperparameters['n_disc'] = 1
@@ -88,6 +91,7 @@ class MainEvaluationAndPrediction(object):
         return result
 
 def ai_vision_main(input_dir, output_dir):
+    # Execute DNN, CNN model training.
     data_obj = MainDataLoadingAndProcessing()
     train_obj = MainTraining()
     evaluate_obj = MainEvaluationAndPrediction()
@@ -99,6 +103,7 @@ def ai_vision_main(input_dir, output_dir):
     print(result)
 
 def gan_training_main(input_dir, output_dir):
+    # Execute GAN model training.
     data_obj = MainDataLoadingAndProcessing()
     train_obj = MainTraining()
     evaluate_obj = MainEvaluationAndPrediction()

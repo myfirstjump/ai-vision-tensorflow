@@ -46,6 +46,10 @@ class DataTraining(object):
             ])
 
         if model_name == 'GAN':
+
+            # Two kinds of modeling method:
+            # 1. Separately define G_net and D_net    <-   We use this.
+            # 2. Define the hidden layer involve G and D. Fix the G weigths when training D, and vice versa.
             
             seed = hyperparameters['seed']
             batch_size = hyperparameters['batch_size']
@@ -65,7 +69,7 @@ class DataTraining(object):
             X_target = tf.placeholder(tf.float32, shape=[None, X_dim])
             z = tf.placeholder(tf.float32, shape=[None, z_dim])
 
-            G_sample, G_var = self.neural_obj.generator(z)
+            G_sample, G_var = self.neural_obj.generator(z) # 由 m = 32 vectors
             D_real_logits, D_var = self.neural_obj.discriminator(X, spectral_normed=False)
             D_fake_logits, _ = self.neural_obj.discriminator(G_sample, spectral_normed=False, reuse=True)
 
@@ -134,22 +138,25 @@ class DataTraining(object):
         z = model['z']
 
         start_time = time.time()
-        for it in range(30000):
+        for it in range(300000):
             for _ in range(n_disc):
+
+                # First, fix generator G, and update discriminator D.
                 X_mb, _ = data.train.next_batch(batch_size)
 
                 _, D_loss_curr = sess.run(
                     [D_solver, D_loss],
                     feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
                 )
-                
+            
+            # Second, fix discriminator, and update generator G.
             X_mb, _ = data.train.next_batch(batch_size)
             _, G_loss_curr = sess.run(
                 [G_solver, G_loss],
                 feed_dict={X: X_mb, z: self.neural_obj.sample_z(batch_size, z_dim)}
             )
 
-            if it % 1000 == 0:
+            if it % 10000 == 0:
                 print('Iter: {}; Cost Time: {:.4}; D loss: {:.4}; G_loss: {:.4}'.format(it, time.time() - start_time, D_loss_curr, G_loss_curr))
                 
                 samples = sess.run(G_sample, feed_dict={z: self.neural_obj.sample_z(16, z_dim)})
